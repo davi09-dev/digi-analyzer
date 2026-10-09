@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Digimons - Digidex</title>
+
+    <link
+        rel="stylesheet"
+        href="../css/style.css"
+    >
+</head>
+
+<body>
+
+    <header>
+
+        <nav>
+
+            <a href="inicio.html">
+                Início
+            </a>
+
+            <a href="digimons.html">
+                Digimons
+            </a>
+
+            <a href="favoritos.html">
+                Favoritos
+            </a>
+
+            <a href="explorar.html">
+                Explorar
+            </a>
+
+            <a href="estatistica.html">
+                Estatística
+            </a>
+
+            <a href="configuracoes.html">
+                Configurações
+            </a>
+
+        </nav>
+
+    </header>
+
+
+    <main>
+
+        <h1>Digidex</h1>
+
+        <form onsubmit="return false;">
+
+            <input
+                id="pesquisa"
+                type="search"
+                placeholder="Pesquisar Digimon..."
+                oninput="pesquisar()"
+            >
+
+            <button onclick="pesquisar()">
+                Pesquisar
+            </button>
+
+        </form>
+
+
+        <h2>Lista de Digimons</h2>
+
+
+        <div class="digimons">
+
+
+            <div
+                class="digimon"
+                data-tipo="Réptil"
+            >
+
+                <div class="imagem">
+                    Imagem 1
+                </div>
+
+                <h2>Agumon</h2>
+
+                <p>
+                    Tipo: Réptil
+                </p>
+
+                <button
+                    onclick="adicionarFavorito('Agumon')"
+                >
+                    Favoritar
+                </button>
+
+            </div>
+
+
+            <div
+                class="digimon"
+                data-tipo="Réptil"
+            >
+
+                <div class="imagem">
+                    Imagem 2
+                </div>
+
+                <h2>Gabumon</h2>
+
+                <p>
+                    Tipo: Réptil
+                </p>
+
+                <button
+                    onclick="adicionarFavorito('Gabumon')"
+                >
+                    Favoritar
+                </button>
+
+            </div>
+
+
+            <div
+                class="digimon"
+                data-tipo="Mamífero"
+            >
+
+                <div class="imagem">
+                    Imagem 3
+                </div>
+
+                <h2>Patamon</h2>
+
+                <p>
+                    Tipo: Mamífero
+                </p>
+
+                <button
+                    onclick="adicionarFavorito('Patamon')"
+                >
+                    Favoritar
+                </button>
+
+            </div>
+
+
+        </div>
+
+    </main>
+
+
+    <script src="../js/script.js"></script>
+
+</body>
+
+</html>

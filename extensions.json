@@ -1,0 +1,15 @@
+{
+    "recommendations": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ritwickdey.LiveServer",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "naumovs.color-highlight",
+        "pkief.material-icon-theme"
+    ],
+    "unwantedRecommendations": []
+}
