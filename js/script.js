@@ -24,30 +24,265 @@ const digimons = [
 ];
 
 
-// PESQUISA
+// PESQUISA NA DIGI-API
 
-function pesquisar() {
+const URL_DIGI_API = "https://digi-api.com/api/v1/digimon/";
 
-    const campo = document.querySelector("#pesquisa");
+// Conta as buscas feitas. Se uma resposta antiga chegar depois de uma
+// busca mais nova, ela é ignorada e não sobrescreve o cartão.
+let numeroDaBusca = 0;
 
-    if (!campo) {
+
+function mostrarMensagem(texto) {
+
+    const mensagem = document.querySelector("#mensagem");
+
+    if (mensagem) {
+        mensagem.textContent = texto;
+    }
+}
+
+
+// Esconde o cartão e apaga todos os dados da pesquisa anterior
+function esconderCartao() {
+
+    const cartao = document.querySelector("#cartao");
+
+    if (!cartao) {
         return;
     }
 
-    const texto = campo.value.toLowerCase();
+    cartao.hidden = true;
 
-    const cards = document.querySelectorAll(".digimon");
+    document.querySelector("#cartao-imagem").textContent = "";
+    document.querySelector("#cartao-nome").textContent = "";
+    document.querySelector("#cartao-id").textContent = "";
+    document.querySelector("#cartao-nivel").textContent = "";
+    document.querySelector("#cartao-tipo").textContent = "";
+    document.querySelector("#cartao-atributo").textContent = "";
+}
 
-    cards.forEach(function(card) {
 
-        const nome = card.querySelector("h2").textContent.toLowerCase();
+// Junta os valores de uma lista da API (ex.: levels, types, attributes)
+function listarCampo(lista, chave) {
 
-        if (nome.includes(texto)) {
-            card.style.display = "block";
-        } else {
-            card.style.display = "none";
+    if (!Array.isArray(lista)) {
+        return "Desconhecido";
+    }
+
+    const valores = lista
+        .map(function(item) {
+            return typeof item === "string" ? item : item && item[chave];
+        })
+        .filter(Boolean);
+
+    return valores.length > 0 ? valores.join(", ") : "Desconhecido";
+}
+
+
+function mostrarImagem(url, nome) {
+
+    const caixa = document.querySelector("#cartao-imagem");
+
+    caixa.textContent = "";
+
+    if (!url) {
+        caixa.textContent = "Sem imagem";
+        return;
+    }
+
+    const img = document.createElement("img");
+
+    img.alt = nome;
+
+    img.onerror = function() {
+        caixa.textContent = "Sem imagem";
+    };
+
+    img.src = url;
+
+    caixa.appendChild(img);
+}
+
+
+// Preenche o cartão existente com os dados recebidos
+function atualizarCartao(digimon) {
+
+    document.querySelector("#cartao-nome").textContent = digimon.name;
+
+    document.querySelector("#cartao-id").textContent =
+        "ID: " + digimon.id;
+
+    document.querySelector("#cartao-nivel").textContent =
+        "Nível: " + listarCampo(digimon.levels, "level");
+
+    document.querySelector("#cartao-tipo").textContent =
+        "Tipo: " + listarCampo(digimon.types, "type");
+
+    document.querySelector("#cartao-atributo").textContent =
+        "Atributo: " + listarCampo(digimon.attributes, "attribute");
+
+    const primeiraImagem =
+        Array.isArray(digimon.images) ? digimon.images[0] : null;
+
+    mostrarImagem(
+        primeiraImagem ? primeiraImagem.href : "",
+        digimon.name
+    );
+
+    document.querySelector("#cartao-favorito").onclick = function() {
+        adicionarFavorito(digimon.name);
+    };
+
+    document.querySelector("#cartao").hidden = false;
+}
+
+
+// Busca na API (serve para nome e para ID, só muda o final do endereço)
+async function buscarDigimon(consulta, descricao) {
+
+    numeroDaBusca++;
+
+    const minhaBusca = numeroDaBusca;
+
+    esconderCartao();
+    mostrarMensagem("Buscando...");
+
+    try {
+
+        const resposta =
+            await fetch(URL_DIGI_API + encodeURIComponent(consulta));
+
+        if (minhaBusca !== numeroDaBusca) {
+            return;
         }
 
+        if (resposta.status === 404 || resposta.status === 400) {
+            mostrarMensagem(
+                "Nenhum Digimon encontrado com " + descricao + "."
+            );
+            return;
+        }
+
+        if (!resposta.ok) {
+            mostrarMensagem(
+                "A Digi-API não respondeu como esperado (código " +
+                resposta.status + "). Tente novamente."
+            );
+            return;
+        }
+
+        const dados = await resposta.json();
+
+        if (minhaBusca !== numeroDaBusca) {
+            return;
+        }
+
+        if (!dados || dados.id === undefined || !dados.name) {
+            mostrarMensagem(
+                "Nenhum Digimon encontrado com " + descricao + "."
+            );
+            return;
+        }
+
+        mostrarMensagem("");
+        atualizarCartao(dados);
+
+    } catch (erro) {
+
+        if (minhaBusca !== numeroDaBusca) {
+            return;
+        }
+
+        mostrarMensagem(
+            "Não foi possível acessar a Digi-API. " +
+            "Verifique sua conexão e tente novamente."
+        );
+    }
+}
+
+
+// Entrada inválida: cancela buscas em andamento e avisa o usuário
+function rejeitarEntrada(texto) {
+
+    numeroDaBusca++;
+
+    esconderCartao();
+    mostrarMensagem(texto);
+}
+
+
+function pesquisarPorNome() {
+
+    const campo = document.querySelector("#busca-nome");
+
+    // tira espaços do começo/fim e reduz espaços repetidos
+    const nome = campo.value.trim().replace(/\s+/g, " ");
+
+    if (nome === "") {
+        rejeitarEntrada("Digite o nome de um Digimon.");
+        return;
+    }
+
+    if (/^\d+$/.test(nome)) {
+        rejeitarEntrada(
+            "Isso parece um número. Para buscar por número, " +
+            "use o campo de ID."
+        );
+        return;
+    }
+
+    buscarDigimon(nome.toLowerCase(), 'o nome "' + nome + '"');
+}
+
+
+function pesquisarPorId() {
+
+    const campo = document.querySelector("#busca-id");
+
+    const texto = campo.value.trim();
+
+    if (texto === "") {
+        rejeitarEntrada("Digite o ID de um Digimon.");
+        return;
+    }
+
+    if (!/^\d+$/.test(texto)) {
+        rejeitarEntrada(
+            "O ID deve ser um número inteiro, usando somente dígitos."
+        );
+        return;
+    }
+
+    const id = Number(texto);
+
+    if (id < 1 || !Number.isSafeInteger(id)) {
+        rejeitarEntrada("O ID deve ser um número maior que zero.");
+        return;
+    }
+
+    buscarDigimon(String(id), "o ID " + id);
+}
+
+
+// Liga os formulários (Enter ou clique no botão, sem recarregar a página)
+function iniciarPesquisa() {
+
+    const formNome = document.querySelector("#form-nome");
+    const formId = document.querySelector("#form-id");
+
+    if (!formNome || !formId) {
+        return;
+    }
+
+    formNome.addEventListener("submit", function(evento) {
+        evento.preventDefault();
+        pesquisarPorNome();
+    });
+
+    formId.addEventListener("submit", function(evento) {
+        evento.preventDefault();
+        pesquisarPorId();
     });
 }
 
@@ -244,3 +479,5 @@ carregarTema();
 mostrarFavoritos();
 
 carregarEstatisticas();
+
+iniciarPesquisa();
