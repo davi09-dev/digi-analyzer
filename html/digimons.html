@@ -56,23 +56,46 @@
 
         <h1>Digidex</h1>
 
-        <form onsubmit="return false;">
+        <form id="form-nome">
 
             <input
-                id="pesquisa"
+                id="busca-nome"
                 type="search"
-                placeholder="Pesquisar Digimon..."
-                oninput="pesquisar()"
+                placeholder="Pesquisar por nome..."
+                aria-label="Pesquisar Digimon por nome"
+                autocomplete="off"
             >
 
-            <button onclick="pesquisar()">
-                Pesquisar
+            <button type="submit">
+                Pesquisar por nome
             </button>
 
         </form>
 
 
-        <h2>Lista de Digimons</h2>
+        <form id="form-id">
+
+            <input
+                id="busca-id"
+                type="text"
+                inputmode="numeric"
+                placeholder="Pesquisar por ID..."
+                aria-label="Pesquisar Digimon por ID"
+                autocomplete="off"
+            >
+
+            <button type="submit">
+                Pesquisar por ID
+            </button>
+
+        </form>
+
+
+        <h2>Resultado da pesquisa</h2>
+
+        <p id="mensagem" role="status" aria-live="polite">
+            Pesquise um Digimon pelo nome ou pelo ID.
+        </p>
 
 
         <div class="digimons">
@@ -80,69 +103,27 @@
 
             <div
                 class="digimon"
-                data-tipo="Réptil"
+                id="cartao"
+                hidden
             >
 
-                <div class="imagem">
-                    Imagem 1
+                <div class="imagem" id="cartao-imagem">
+                    Imagem
                 </div>
 
-                <h2>Agumon</h2>
+                <h2 id="cartao-nome"></h2>
 
-                <p>
-                    Tipo: Réptil
-                </p>
+                <p id="cartao-id"></p>
 
-                <button
-                    onclick="adicionarFavorito('Agumon')"
-                >
-                    Favoritar
-                </button>
+                <p id="cartao-nivel"></p>
 
-            </div>
+                <p id="cartao-tipo"></p>
 
-
-            <div
-                class="digimon"
-                data-tipo="Réptil"
-            >
-
-                <div class="imagem">
-                    Imagem 2
-                </div>
-
-                <h2>Gabumon</h2>
-
-                <p>
-                    Tipo: Réptil
-                </p>
+                <p id="cartao-atributo"></p>
 
                 <button
-                    onclick="adicionarFavorito('Gabumon')"
-                >
-                    Favoritar
-                </button>
-
-            </div>
-
-
-            <div
-                class="digimon"
-                data-tipo="Mamífero"
-            >
-
-                <div class="imagem">
-                    Imagem 3
-                </div>
-
-                <h2>Patamon</h2>
-
-                <p>
-                    Tipo: Mamífero
-                </p>
-
-                <button
-                    onclick="adicionarFavorito('Patamon')"
+                    id="cartao-favorito"
+                    type="button"
                 >
                     Favoritar
                 </button>
