@@ -198,3 +198,18 @@ main > div:not(.digimons) {
         max-width: 300px;
     }
 }
+
+
+/* Botões Próximo / Anterior / Me surpreenda (Guia 3/7) */
+
+.navegacao {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
