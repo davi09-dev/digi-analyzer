@@ -1,28 +1,3 @@
-// Lista de Digimons
-
-const digimons = [
-  {
-    nome: "Agumon",
-    tipo: "Réptil",
-    nivel: "Novato",
-    atributo: "Vacina",
-  },
-
-  {
-    nome: "Gabumon",
-    tipo: "Réptil",
-    nivel: "Novato",
-    atributo: "Dados",
-  },
-
-  {
-    nome: "Patamon",
-    tipo: "Mamífero",
-    nivel: "Novato",
-    atributo: "Dados",
-  },
-];
-
 // PESQUISA NA DIGI-API
 
 const URL_DIGI_API = "https://digi-api.com/api/v1/digimon/";
@@ -575,11 +550,25 @@ function carregarTema() {
 
 // ESTATÍSTICAS
 
-function carregarEstatisticas() {
+async function carregarEstatisticas() {
   const total = document.querySelector("#total");
 
   if (total) {
-    total.textContent = digimons.length;
+    total.textContent = "Carregando...";
+
+    try {
+      const resposta = await fetch(URL_LISTA_DIGIMONS + "?page=0&pageSize=1");
+
+      const dados = await resposta.json();
+
+      // CONFIRMAR: total em pageable.totalElements
+      total.textContent =
+        dados.pageable && dados.pageable.totalElements !== undefined
+          ? dados.pageable.totalElements
+          : "Indisponível";
+    } catch (erro) {
+      total.textContent = "Indisponível";
+    }
   }
 
   const favoritos = JSON.parse(localStorage.getItem("favoritos")) || [];
@@ -589,6 +578,205 @@ function carregarEstatisticas() {
   if (totalFavoritos) {
     totalFavoritos.textContent = favoritos.length;
   }
+}
+// LISTA E ORDENAÇÃO
+
+const URL_LISTA_DIGIMONS = "https://digi-api.com/api/v1/digimon";
+const TAMANHO_DA_PAGINA = 50;
+
+// Fica sempre na ordem em que a API entregou. Nunca é reordenada:
+// a ordenação trabalha em uma cópia.
+let listaOriginal = [];
+
+let proximaPagina = 0; // null = não há mais páginas
+let totalNaApi = null;
+let carregandoLista = false;
+
+// Devolve uma cópia ordenada; a lista recebida não é alterada
+function ordenarLista(lista, criterio) {
+  const copia = lista.slice();
+
+  if (criterio === "original") {
+    return copia;
+  }
+
+  const sinal = criterio.endsWith("-desc") ? -1 : 1;
+
+  if (criterio.startsWith("nome")) {
+    copia.sort(function (a, b) {
+      // sensitivity "base": ignora maiúsculas/minúsculas e acentos
+      const r = a.name.localeCompare(b.name, "pt-BR", {
+        sensitivity: "base",
+      });
+
+      // empate de nome: desempata pelo ID, para o resultado ser estável
+      return r !== 0 ? sinal * r : Number(a.id) - Number(b.id);
+    });
+  } else if (criterio.startsWith("id")) {
+    // comparação numérica
+    copia.sort(function (a, b) {
+      return sinal * (Number(a.id) - Number(b.id));
+    });
+  }
+
+  return copia;
+}
+
+function mostrarStatusLista(texto) {
+  const status = document.querySelector("#status-lista");
+
+  if (status) {
+    status.textContent = texto;
+  }
+}
+
+// Busca UMA página da lista e acrescenta em listaOriginal
+async function carregarPagina() {
+  if (carregandoLista || proximaPagina === null) {
+    return false;
+  }
+
+  carregandoLista = true;
+
+  try {
+    const url =
+      URL_LISTA_DIGIMONS +
+      "?page=" +
+      proximaPagina +
+      "&pageSize=" +
+      TAMANHO_DA_PAGINA;
+
+    const resposta = await fetch(url);
+
+    if (!resposta.ok) {
+      throw new Error("status " + resposta.status);
+    }
+
+    const dados = await resposta.json();
+
+    // CONFIRMAR: itens em "content"
+    const itens = Array.isArray(dados.content) ? dados.content : [];
+
+    // CONFIRMAR: informações de paginação em "pageable"
+    const info = dados.pageable || {};
+
+    if (info.totalElements !== undefined) {
+      totalNaApi = info.totalElements;
+    }
+
+    listaOriginal = listaOriginal.concat(itens);
+
+    // CONFIRMAR: "nextPage" vem vazio na última página
+    if (itens.length === 0 || !info.nextPage) {
+      proximaPagina = null;
+    } else {
+      proximaPagina++;
+    }
+
+    return true;
+  } catch (erro) {
+    mostrarStatusLista(
+      "Não foi possível carregar a lista da Digi-API. " + "Tente novamente.",
+    );
+
+    return false;
+  } finally {
+    carregandoLista = false;
+  }
+}
+
+function desenharLista() {
+  const caixa = document.querySelector("#lista-digimons");
+
+  const criterio = document.querySelector("#ordem").value;
+
+  const lista = ordenarLista(listaOriginal, criterio);
+
+  caixa.textContent = "";
+
+  lista.forEach(function (item) {
+    const cartao = document.createElement("div");
+    cartao.className = "digimon";
+
+    const nome = document.createElement("h2");
+    nome.textContent = item.name;
+
+    const id = document.createElement("p");
+    id.textContent = "ID: " + item.id;
+
+    cartao.appendChild(nome);
+    cartao.appendChild(id);
+
+    caixa.appendChild(cartao);
+  });
+
+  const completo = proximaPagina === null;
+
+  mostrarStatusLista(
+    "Exibindo " +
+      lista.length +
+      (totalNaApi !== null ? " de " + totalNaApi : "") +
+      " Digimons. " +
+      (completo
+        ? "A ordenação vale para todos os registros."
+        : "A ordenação vale só para os registros já carregados."),
+  );
+}
+
+function bloquearBotoesLista(bloquear) {
+  document.querySelector("#carregar-mais").disabled = bloquear;
+  document.querySelector("#carregar-todos").disabled = bloquear;
+}
+
+async function carregarMais() {
+  bloquearBotoesLista(true);
+
+  await carregarPagina();
+  desenharLista();
+
+  bloquearBotoesLista(false);
+}
+
+async function carregarTodos() {
+  bloquearBotoesLista(true);
+
+  while (proximaPagina !== null) {
+    const deuCerto = await carregarPagina();
+
+    if (!deuCerto) {
+      break;
+    }
+
+    mostrarStatusLista(
+      "Carregando... " +
+        listaOriginal.length +
+        (totalNaApi !== null ? " de " + totalNaApi : ""),
+    );
+  }
+
+  desenharLista();
+
+  bloquearBotoesLista(false);
+}
+
+function iniciarLista() {
+  if (!document.querySelector("#lista-digimons")) {
+    return;
+  }
+
+  document.querySelector("#ordem").addEventListener("change", desenharLista);
+
+  document
+    .querySelector("#carregar-mais")
+    .addEventListener("click", carregarMais);
+
+  document
+    .querySelector("#carregar-todos")
+    .addEventListener("click", carregarTodos);
+
+  mostrarStatusLista("Carregando a lista...");
+
+  carregarMais();
 }
 
 // EXECUTAR AO ABRIR A PÁGINA
@@ -602,3 +790,5 @@ carregarEstatisticas();
 iniciarPesquisa();
 
 iniciarNavegacao();
+
+iniciarLista();
