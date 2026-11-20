@@ -579,7 +579,8 @@ async function carregarEstatisticas() {
     totalFavoritos.textContent = favoritos.length;
   }
 }
-// LISTA E ORDENAÇÃO
+
+// LISTA E ORDENAÇÃO (Guia 4/7)
 
 const URL_LISTA_DIGIMONS = "https://digi-api.com/api/v1/digimon";
 const TAMANHO_DA_PAGINA = 50;
@@ -613,7 +614,7 @@ function ordenarLista(lista, criterio) {
       return r !== 0 ? sinal * r : Number(a.id) - Number(b.id);
     });
   } else if (criterio.startsWith("id")) {
-    // comparação numérica
+    // comparação numérica (e não como texto)
     copia.sort(function (a, b) {
       return sinal * (Number(a.id) - Number(b.id));
     });
@@ -685,6 +686,34 @@ async function carregarPagina() {
   }
 }
 
+// Monta a caixa da imagem de um item da lista.
+// Se a API não trouxer imagem, ou se ela falhar ao carregar,
+// mostra o texto "Sem imagem".
+function criarCaixaDeImagem(url, nome) {
+  const caixa = document.createElement("div");
+  caixa.className = "imagem";
+
+  if (!url) {
+    caixa.textContent = "Sem imagem";
+    return caixa;
+  }
+
+  const img = document.createElement("img");
+
+  img.alt = nome;
+  img.loading = "lazy"; // só baixa a imagem quando ela chega perto da tela
+
+  img.onerror = function () {
+    caixa.textContent = "Sem imagem";
+  };
+
+  img.src = url;
+
+  caixa.appendChild(img);
+
+  return caixa;
+}
+
 function desenharLista() {
   const caixa = document.querySelector("#lista-digimons");
 
@@ -698,12 +727,16 @@ function desenharLista() {
     const cartao = document.createElement("div");
     cartao.className = "digimon";
 
+    // CONFIRMAR: na lista da API a imagem vem no campo "image"
+    const imagem = criarCaixaDeImagem(item.image, item.name);
+
     const nome = document.createElement("h2");
     nome.textContent = item.name;
 
     const id = document.createElement("p");
     id.textContent = "ID: " + item.id;
 
+    cartao.appendChild(imagem);
     cartao.appendChild(nome);
     cartao.appendChild(id);
 
